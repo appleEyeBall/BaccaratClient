@@ -14,11 +14,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
 import java.io.*;
 import java.net.Socket;
 
-public class JavaFXTemplate extends Application implements EventHandler,Serializable, Runnable {
+public class JavaFXTemplate extends Application implements EventHandler, Serializable, Runnable {
 	Stage primaryStage;
 	VBox mainRoot;
 	ClientGUI gameSceneController;
@@ -95,33 +94,32 @@ public class JavaFXTemplate extends Application implements EventHandler,Serializ
 		socket = new Socket(ipAddress.getText(), portNumber);
 		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 
+
 		packet = new Packet(ipAddress.getText(),portNumber, clientName.getText());
 		outStream.writeObject(packet);
 
+		Thread thread = new Thread(this);
+		thread.start();
+
+
 		System.out.println("Packet received from server");
+
+		outStream.close();
+		socket.close();
+
 
 
 	}
 
 	@Override
 	public void run() {
-
-		ObjectInputStream inStream = null;
 		try {
-			inStream = new ObjectInputStream(socket.getInputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Packet clientPacket = null;
-		try {
+			ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
+			Packet clientPacket = null;
 			clientPacket = (Packet) inStream.readObject();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
+			System.out.println("Game Result is: " + clientPacket.getWinnerMsg());
+		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.out.println("Game Result is: " + clientPacket.getWinnerMsg());
-
-
 	}
 }
