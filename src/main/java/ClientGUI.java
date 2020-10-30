@@ -79,12 +79,12 @@ public class ClientGUI implements EventHandler {
 
         Rectangle playerCard_2 = new Rectangle();
 
-//        Label cardNum_2 = new Label();
-//        cardNum_2.setText("ACE");
-//        cardNum_2.setTextFill(Color.INDIANRED);
-//        StackPane card_2 = new StackPane();
-//        card_1.getChildren().addAll(playerCard_2,cardNum_2);
-//        cardNum_2.setAlignment(Pos.TOP_RIGHT);
+        Label cardNum_2 = new Label();
+        cardNum_2.setText("ACE");
+        cardNum_2.setTextFill(Color.INDIANRED);
+        StackPane card_2 = new StackPane();
+        card_1.getChildren().addAll(playerCard_2,cardNum_2);
+        cardNum_2.setAlignment(Pos.TOP_RIGHT);
 
         makeDraw = new Button("DRAW");
         makeDraw.setPrefSize(70,50);
@@ -92,7 +92,7 @@ public class ClientGUI implements EventHandler {
         makeDraw.setOnAction(this);
 
 
-        playArea.getChildren().addAll(card_1, makeDraw);
+        playArea.getChildren().addAll(card_1,card_2, makeDraw);
         playArea.setSpacing(20);
         playArea.setPadding(new Insets(10,10,0,0));
 
