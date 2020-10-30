@@ -18,7 +18,7 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.net.Socket;
 
-public class JavaFXTemplate extends Application implements EventHandler,Serializable {
+public class JavaFXTemplate extends Application implements EventHandler,Serializable, Runnable {
 	Stage primaryStage;
 	VBox mainRoot;
 	ClientGUI gameSceneController;
@@ -27,6 +27,7 @@ public class JavaFXTemplate extends Application implements EventHandler,Serializ
 	public TextField portNum;
 	public Button connectBtn;
 	private Packet packet;
+	private Socket socket;
 
 //	public static void main(String[] args) {
 //		// TODO Auto-generated method stub
@@ -91,23 +92,35 @@ public class JavaFXTemplate extends Application implements EventHandler,Serializ
 
 	public void connectToServer(int portNumber) throws IOException, ClassNotFoundException {
 
-		Socket socket = new Socket(ipAddress.getText(), portNumber);
+		socket = new Socket(ipAddress.getText(), portNumber);
 		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
-		ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
 
-		packet = new Packet(ipAddress.getText(),portNumber);
-
-		Packet.PlayerDetails playerDetails= packet.new PlayerDetails();
-		playerDetails.setPlayerName(clientName.getText());
+		packet = new Packet(ipAddress.getText(),portNumber, clientName.getText());
 		outStream.writeObject(packet);
-		Packet clientPacket = (Packet) inStream.readObject();
 
 		System.out.println("Packet received from server");
+
+
+	}
+
+	@Override
+	public void run() {
+
+		ObjectInputStream inStream = null;
+		try {
+			inStream = new ObjectInputStream(socket.getInputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Packet clientPacket = null;
+		try {
+			clientPacket = (Packet) inStream.readObject();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
 		System.out.println("Game Result is: " + clientPacket.getWinnerMsg());
-
-		outStream.close();
-		socket.close();
-
 
 
 	}

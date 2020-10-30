@@ -19,13 +19,10 @@ public class Packet implements Serializable {
         private int bidAmount;
         private GameResults betChoice;
 
-//        public PlayerDetails() {
-//
-//        }
-//
-//        public PlayerDetails(String playerName) {
-//            this.playerName = playerName;
-//        }
+
+        public PlayerDetails(String playerName) {
+            this.playerName = playerName;
+        }
 
         public String getPlayerName() {
             return playerName;
@@ -61,10 +58,10 @@ public class Packet implements Serializable {
     }
 
 
-    public Packet(String ipAddress, int portNum) {
+    public Packet(String ipAddress, int portNum,String name) {
         this.ipAddress = ipAddress;
         this.portNum = portNum;
-        this.playerDetails = getPlayerDetails();
+        this.playerDetails = new PlayerDetails(name);
     }
 
     public ArrayList<Card> giveHand(ArrayList<Card> hand){

@@ -7,8 +7,7 @@ public class Card implements Serializable {
     public Card(String suite, int value) {
         this.suite = suite;
         this.value = value;
-        // some change
-        // another change
+
     }
 
 }
