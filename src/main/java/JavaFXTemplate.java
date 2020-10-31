@@ -104,10 +104,6 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 
 		System.out.println("Packet received from server");
 
-		outStream.close();
-		socket.close();
-
-
 
 	}
 
