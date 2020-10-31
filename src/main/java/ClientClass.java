@@ -1,3 +1,5 @@
+import model.Packet;
+
 public class ClientClass{
 
     Packet packet;

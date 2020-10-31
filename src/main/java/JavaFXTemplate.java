@@ -1,19 +1,17 @@
 import javafx.application.Application;
 
-import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import model.Packet;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -95,17 +93,17 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 
 
-		packet = new Packet(ipAddress.getText(),portNumber, clientName.getText());
+		packet = new model.Packet(socket.getLocalSocketAddress().toString(),portNumber, clientName.getText());
 		outStream.writeObject(packet);
 
 		Thread thread = new Thread(this);
 		thread.start();
 
 
-		System.out.println("Packet received from server");
+		System.out.println("model.Packet received from server");
 
-		outStream.close();
-		socket.close();
+//		outStream.close();
+//		socket.close();
 
 
 
