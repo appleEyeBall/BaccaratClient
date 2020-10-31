@@ -8,6 +8,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import model.Card;
+import model.CardVisual;
 
 import java.io.IOException;
 
@@ -59,41 +61,68 @@ public class ClientGUI implements EventHandler {
         bankerLabel.setPrefSize(140,50);
         baccarat.setPrefSize(120,50);
 
-        scoreRow.setSpacing(600/16);  // might make a UTIL.java later dont worry
+        scoreRow.setSpacing(600/16);  // might make a UTIL.java later don't worry
         scoreRow.getChildren().addAll(playerCurrentScore,playerLabel, baccarat,bankerLabel, bankerCurrentScore);
 
     }
     public void createPlayArea(){
+        playArea.setMinHeight(350);
+        Card sampleCard = new Card("test", 0);
+        CardVisual cardVisual = new CardVisual(sampleCard);
+        cardVisual.getVisual().setVisible(false);
 
-        Rectangle playerCard_1 = new Rectangle();
-        playerCard_1.setHeight(200);
-        playerCard_1.setWidth(100);
-        playerCard_1.setFill(Color.WHITE);
+        // divide the play area into three columns
+        VBox playerArea = new VBox();
+        playerArea.setMinWidth(600/2.5);
+        playerArea.setSpacing(10);
+        VBox drawArea = new VBox();
+        drawArea.setMinWidth(600/5);
+        VBox bankerArea = new VBox();
+        bankerArea.setSpacing(10);
+        bankerArea.setMinWidth(600/2.5);
 
-        Label cardNum_1 = new Label();
-        cardNum_1.setText("1");
-        cardNum_1.setTextFill(Color.INDIANRED);
-        StackPane card_1 = new StackPane();
-        card_1.getChildren().addAll(playerCard_1,cardNum_1);
-        cardNum_1.setAlignment(Pos.TOP_RIGHT);
+        // divide playerArea into column into 2 rows
+        HBox playerAreaFirst = new HBox();
+        playerAreaFirst.setAlignment(Pos.CENTER);
+        playerAreaFirst.setSpacing(10);
+        HBox playerAreaSecond = new HBox();
+        playerAreaSecond.setAlignment(Pos.CENTER);
+        playerArea.getChildren().addAll(playerAreaFirst, playerAreaSecond);
 
-        Rectangle playerCard_2 = new Rectangle();
-
-        Label cardNum_2 = new Label();
-        cardNum_2.setText("ACE");
-        cardNum_2.setTextFill(Color.INDIANRED);
-        StackPane card_2 = new StackPane();
-        card_1.getChildren().addAll(playerCard_2,cardNum_2);
-        cardNum_2.setAlignment(Pos.TOP_RIGHT);
-
+        // do draw area
         makeDraw = new Button("DRAW");
         makeDraw.setPrefSize(70,50);
-        makeDraw.setAlignment(Pos.CENTER);
         makeDraw.setOnAction(this);
+        drawArea.setAlignment(Pos.CENTER);
+        drawArea.getChildren().add(makeDraw);
 
 
-        playArea.getChildren().addAll(card_1,card_2, makeDraw);
-        playArea.setSpacing(20);
+
+        // divide bankerArea into column into 2 rows
+        HBox bankerAreaFirst = new HBox();
+        bankerAreaFirst.setAlignment(Pos.CENTER);
+        bankerAreaFirst.setSpacing(10);
+        HBox bankerAreaSecond = new HBox();
+        bankerAreaSecond.setAlignment(Pos.CENTER);
+        bankerArea.getChildren().addAll(bankerAreaFirst,  bankerAreaSecond);
+
+
+            // TODO: delete later hard code
+        Card testCard = new Card("test", 7);
+        CardVisual testCardVisual = new CardVisual(testCard);
+        CardVisual testCardVisual2 = new CardVisual(testCard);
+        CardVisual testCardVisual3 = new CardVisual(testCard);
+        CardVisual testCardVisual4 = new CardVisual(testCard);
+        CardVisual testCardVisual5 = new CardVisual(testCard);
+        CardVisual testCardVisual6 = new CardVisual(testCard);
+        playerAreaFirst.getChildren().addAll(testCardVisual.getVisual(), testCardVisual2.getVisual());
+        playerAreaSecond.getChildren().add(testCardVisual3.getVisual());
+        bankerAreaFirst.getChildren().addAll(testCardVisual4.getVisual(), testCardVisual5.getVisual());
+        bankerAreaSecond.getChildren().add(testCardVisual6.getVisual());
+        playArea.setBackground(new Background(new BackgroundFill(Color.PALEVIOLETRED, null, null)));
+
+
+        playArea.getChildren().addAll(playerArea, drawArea, bankerArea);
         playArea.setPadding(new Insets(10,10,0,0));
 
 

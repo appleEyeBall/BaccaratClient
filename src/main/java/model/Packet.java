@@ -1,3 +1,5 @@
+package model;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -53,10 +55,12 @@ public class Packet implements Serializable {
         private ArrayList<Card> hand;
         private int bidAmount;
         private GameResults betChoice;
+        private boolean isOnline;
 
 
         public PlayerDetails(String playerName) {
             this.playerName = playerName;
+            this.isOnline = true;
         }
 
         public String getPlayerName() {
@@ -90,8 +94,15 @@ public class Packet implements Serializable {
         public void setBetChoice(GameResults betChoice) {
             this.betChoice = betChoice;
         }
+
+        public boolean isOnline() {
+            return isOnline;
+        }
+
+        public void setOnline(boolean online) {
+            isOnline = online;
+        }
     }
 
 
 }
-
