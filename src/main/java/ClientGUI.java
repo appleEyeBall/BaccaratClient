@@ -10,6 +10,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Card;
 import model.CardVisual;
+import model.Packet;
 
 import java.io.IOException;
 
@@ -26,6 +27,7 @@ public class ClientGUI implements EventHandler {
    Button bankerWins;
    Button tie;
    TextField dollars;
+   Packet gameDetails;
 
     public ClientGUI(VBox gameScene) throws IOException {
 
@@ -204,6 +206,21 @@ public class ClientGUI implements EventHandler {
 
         }
         if(event.getSource() == play){
+
+        }
+        if(event.getSource() == quit){
+
+        }
+        if(event.getSource() == playerWins){
+            bankerWins.setDisable(true);
+            tie.setDisable(true);
+
+
+        }
+        if(event.getSource() == bankerWins){
+
+        }
+        if(event.getSource() == tie){
 
         }
 
