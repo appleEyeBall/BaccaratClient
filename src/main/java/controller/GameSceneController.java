@@ -67,7 +67,7 @@ public class GameSceneController extends Thread implements EventHandler {
 
         gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
         this.start();
-        displayResults();
+//        displayResults();
 
     }
 
@@ -267,7 +267,7 @@ public class GameSceneController extends Thread implements EventHandler {
 
         }
 
-        if (event.getSource() == quitBtn){
+        if (event.getSource() == quitBtn) {
             // notify server that we are quitting, close resources, then quit
             try {
                 packet.setClientPlaying(false);
@@ -281,54 +281,56 @@ public class GameSceneController extends Thread implements EventHandler {
                 System.exit(0);
             } catch (IOException e) {
                 e.printStackTrace();
-
-        if(event.getSource() == playerWins){
-            countClicks++;
-            if(countClicks % 2!= 0) {
-                bankerWins.setDisable(true);
-                tie.setDisable(true);
-                playerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
-                packet.getPlayerDetails().setBetChoice(playerWins.getText());
             }
-            else{
-                bankerWins.setDisable(false);
-                tie.setDisable(false);
-                playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
-            }
-
-        }
-        if(event.getSource() == bankerWins){
-            countClicks++;
-            if(countClicks % 2!= 0) {
-                playerWins.setDisable(true);
-                tie.setDisable(true);
-                bankerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
-                packet.getPlayerDetails().setBetChoice(bankerWins.getText());
-            }
-            else{
-                playerWins.setDisable(false);
-                tie.setDisable(false);
-                bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
-            }
-
-        }
-        if(event.getSource() == tie){
-            countClicks++;
-            if(countClicks % 2!= 0) {
-                bankerWins.setDisable(true);
-                playerWins.setDisable(true);
-                tie.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
-                packet.getPlayerDetails().setBetChoice(tie.getText());
-            }
-            else{
-                playerWins.setDisable(false);
-                bankerWins.setDisable(false);
-                tie.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
-            }
-
         }
 
-    }
+                if(event.getSource() == playerWins){
+                    countClicks++;
+                    if(countClicks % 2!= 0) {
+                        bankerWins.setDisable(true);
+                        tie.setDisable(true);
+                        playerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                        packet.getPlayerDetails().setBetChoice(playerWins.getText());
+                    }
+                    else{
+                        bankerWins.setDisable(false);
+                        tie.setDisable(false);
+                        playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+                    }
+
+                }
+                if(event.getSource() == bankerWins){
+                    countClicks++;
+                    if(countClicks % 2!= 0) {
+                        playerWins.setDisable(true);
+                        tie.setDisable(true);
+                        bankerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                        packet.getPlayerDetails().setBetChoice(bankerWins.getText());
+                    }
+                    else{
+                        playerWins.setDisable(false);
+                        tie.setDisable(false);
+                        bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+                    }
+
+                }
+                if(event.getSource() == tie){
+                    countClicks++;
+                    if(countClicks % 2!= 0) {
+                        bankerWins.setDisable(true);
+                        playerWins.setDisable(true);
+                        tie.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                        packet.getPlayerDetails().setBetChoice(tie.getText());
+                    }
+                    else{
+                        playerWins.setDisable(false);
+                        bankerWins.setDisable(false);
+                        tie.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+                    }
+
+                }
+
+            }
 
     @Override
     public void run() {
