@@ -14,14 +14,12 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Packet;
 import util.Util;
-
 import java.io.*;
 import java.net.Socket;
 
 public class JavaFXTemplate extends Application implements EventHandler, Serializable {
 	Stage primaryStage;
 	VBox mainRoot;
-
 	GameSceneController gameSceneController;
 	public TextField ipAddress;
 	public TextField clientName;

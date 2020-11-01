@@ -1,4 +1,5 @@
 package model;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -72,6 +73,15 @@ public class Packet implements Serializable {
         private int bidAmount;
         private String betChoice;
         private boolean isOnline;
+        private double totalWinnings;
+
+        public double getTotalWinnings() {
+            return totalWinnings;
+        }
+
+        public void setTotalWinnings(double totalWinnings) {
+            this.totalWinnings = totalWinnings;
+        }
 
         public double getTotalWinnings() {
             return totalWinnings;
@@ -134,6 +144,25 @@ public class Packet implements Serializable {
 
         public void setOnline(boolean online) {
             this.isOnline = online;
+        }
+        public int getHandTotal(ArrayList<Card> hand){
+            int total = 0;
+
+            for(Card card: hand){
+                int cardValue = card.getValue();
+                if(total <= 9) {
+                    if (cardValue > 10) {
+                        total += 0;
+                    } else {
+                        total += cardValue;
+                    }
+                }
+                if(total > 9){
+                    total -= 10;
+                }
+            }
+            return total;
+
         }
     }
 

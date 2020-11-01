@@ -8,13 +8,14 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Card;
 import model.CardVisual;
 import model.Packet;
 import util.Util;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -22,6 +23,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class GameSceneController extends Thread implements EventHandler {
+
     VBox gameScene;
     HBox scoreRow;
     HBox playArea;
@@ -37,21 +39,21 @@ public class GameSceneController extends Thread implements EventHandler {
     Button bankerWins;
     Button tie;
     TextField dollars;
-
-
     Socket socket;
     Packet packet;
     ObjectOutputStream out;
     ObjectInputStream in;
+    int countClicks;
+    Label playerCurrentScore;
+    Label bankerCurrentScore;
 
     public GameSceneController(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
         this.socket = socket;
         this.gameScene = gameScene;
         this.packet = packet;
-
         this.out = out;
 //        in = new ObjectInputStream(this.socket.getInputStream());
-
+        countClicks = 0;
         gameScene.setPadding(new Insets(10,10,10,10));
 
         scoreRow =  new HBox();
@@ -65,33 +67,39 @@ public class GameSceneController extends Thread implements EventHandler {
 
         gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
         this.start();
+        displayResults();
+
     }
 
 
     public void createScoreRow(){
 
-        Label playerCurrentScore = new Label("0");
+        playerCurrentScore = new Label("0");
+
         playerCurrentScore.setAlignment(Pos.CENTER);
         Label playerLabel = new Label("PLAYER");
         Label baccarat = new Label("BACCARAT");
         Label bankerLabel = new Label("BANKER");
-        Label bankerCurrentScore = new Label("0");
+        bankerCurrentScore = new Label("0");
+
         bankerCurrentScore.setAlignment(Pos.CENTER);
         bankerLabel.setAlignment(Pos.CENTER);
         playerLabel.setAlignment(Pos.CENTER);
         baccarat.setAlignment(Pos.CENTER);
 
         playerCurrentScore.setPrefSize(50,50);
-        playerCurrentScore.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
+        playerCurrentScore.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
         bankerCurrentScore.setPrefSize(50,50);
-        bankerCurrentScore.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
+        bankerCurrentScore.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        playerLabel.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
-        bankerLabel.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
-
+        playerLabel.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
+        bankerLabel.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
         playerLabel.setPrefSize(140,50);
         bankerLabel.setPrefSize(140,50);
         baccarat.setPrefSize(120,50);
+
+        //update the current scores for both banker and player
+        //playerCurrentScore.setText(packet.getPlayerDetails().getHandTotal());
 
         scoreRow.setSpacing(600/16);  // might make a UTIL.java later don't worry
         scoreRow.getChildren().addAll(playerCurrentScore,playerLabel, baccarat,bankerLabel, bankerCurrentScore);
@@ -138,10 +146,9 @@ public class GameSceneController extends Thread implements EventHandler {
         bankerAreaSecond.setAlignment(Pos.CENTER);
         bankerArea.getChildren().addAll(bankerAreaFirst,  bankerAreaSecond);
 
-        playArea.setBackground(new Background(new BackgroundFill(Color.PALEVIOLETRED, null, null)));
+        playArea.setBackground(new Background(new BackgroundFill(Color.DARKGREEN, null, null)));
         playArea.getChildren().addAll(playerArea, drawArea, bankerArea);
         playArea.setPadding(new Insets(10,10,0,0));
-
 
     }
     public void createControlsArea(){
@@ -203,6 +210,33 @@ public class GameSceneController extends Thread implements EventHandler {
         bidRow.getChildren().addAll(bidAmount,betChoices, controls);
 
     }
+
+    public void displayResults(){
+        String result;
+        if(packet.getPlayerDetails().getBetChoice().equals(packet.getWinnerMsg())){
+            result = "won";
+        }
+        else{
+            result = "lose";
+        }
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText("--Game Results--");
+        ArrayList<Card> playerHand = packet.getPlayerDetails().getPlayerHand();
+        ArrayList<Card> bankerHand = packet.getPlayerDetails().getBankerHand();
+        alert.setContentText("Player's hand Total : " + packet.getPlayerDetails().getHandTotal(playerHand));
+        alert.setContentText("Banker's hand Total : " + packet.getPlayerDetails().getHandTotal(bankerHand));
+
+        if(packet.getWinnerMsg().equals("Tie")){
+            alert.setContentText("It's a Tie !");
+        }
+        else {
+            alert.setContentText(packet.getWinnerMsg() + "wins !");
+        }
+        alert.setContentText("You bet on " + packet.getPlayerDetails().getBetChoice() + ", you " + result);
+
+        alert.showAndWait();
+    }
     @Override
     public void handle(Event event) {
         if (event.getSource() == makeDraw){     // send demo packet to server
@@ -247,6 +281,49 @@ public class GameSceneController extends Thread implements EventHandler {
                 System.exit(0);
             } catch (IOException e) {
                 e.printStackTrace();
+
+        if(event.getSource() == playerWins){
+            countClicks++;
+            if(countClicks % 2!= 0) {
+                bankerWins.setDisable(true);
+                tie.setDisable(true);
+                playerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                packet.getPlayerDetails().setBetChoice(playerWins.getText());
+            }
+            else{
+                bankerWins.setDisable(false);
+                tie.setDisable(false);
+                playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+            }
+
+        }
+        if(event.getSource() == bankerWins){
+            countClicks++;
+            if(countClicks % 2!= 0) {
+                playerWins.setDisable(true);
+                tie.setDisable(true);
+                bankerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                packet.getPlayerDetails().setBetChoice(bankerWins.getText());
+            }
+            else{
+                playerWins.setDisable(false);
+                tie.setDisable(false);
+                bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+            }
+
+        }
+        if(event.getSource() == tie){
+            countClicks++;
+            if(countClicks % 2!= 0) {
+                bankerWins.setDisable(true);
+                playerWins.setDisable(true);
+                tie.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                packet.getPlayerDetails().setBetChoice(tie.getText());
+            }
+            else{
+                playerWins.setDisable(false);
+                bankerWins.setDisable(false);
+                tie.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
             }
 
         }
@@ -277,6 +354,18 @@ public class GameSceneController extends Thread implements EventHandler {
         }
     }
 
+    public void updateCurrentScores(ArrayList<Card> hand, Label scoreLbl){
+        ArrayList<Card> tempHand = new ArrayList<>();
+        ArrayList<Integer> currScore = new ArrayList<Integer>();
+        currScore.add(0);
+
+        for(Card card: hand){
+            tempHand.add(card);
+            currScore.add(packet.getPlayerDetails().getHandTotal(tempHand));
+            scoreLbl.setText(String.valueOf(currScore));
+        }
+
+    }
     public void updateWithCards(Packet packet){
        Platform.runLater(new Runnable() {
            @Override
