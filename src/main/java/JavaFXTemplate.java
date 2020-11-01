@@ -15,7 +15,7 @@ import model.Packet;
 import java.io.*;
 import java.net.Socket;
 
-public class JavaFXTemplate extends Application implements EventHandler, Serializable, Runnable {
+public class JavaFXTemplate extends Application implements EventHandler, Serializable {
 	Stage primaryStage;
 	VBox mainRoot;
 	ClientGUI gameSceneController;
@@ -34,9 +34,8 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 	//feel free to remove the starter code from this method
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		// TODO Auto-generated method stub
-
 		this.primaryStage = primaryStage;
+
 		VBox parent = new VBox();
 		parent.setPadding(new Insets(100,120,0,120));
 		clientName =  new TextField();
@@ -66,9 +65,9 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 
 	}
 
-	public void LaunchMainScene(Event event) throws IOException {
+	public void showGameScene(ObjectOutputStream out) throws IOException {
 		mainRoot = new VBox();
-		gameSceneController = new ClientGUI(mainRoot);
+		gameSceneController = new ClientGUI(mainRoot, socket, packet, out);
 		primaryStage.setScene(new Scene(mainRoot,600,600));
 		primaryStage.show();
 
@@ -78,8 +77,9 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 	public void handle(Event event) {
 		if (event.getSource() == connectBtn){
 			try {
-				LaunchMainScene(event);
-				connectToServer(Integer.valueOf(portNum.getText()));
+				// connect to server, then show game scene
+				ObjectOutputStream out = connectToServer(Integer.valueOf(portNum.getText()));
+				showGameScene(out);
 			} catch (IOException | ClassNotFoundException e) {    //
 				e.printStackTrace();
 			}
@@ -87,37 +87,14 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 		}
 	}
 
-	public void connectToServer(int portNumber) throws IOException, ClassNotFoundException {
+	public ObjectOutputStream connectToServer(int portNumber) throws IOException, ClassNotFoundException {
 
 		socket = new Socket(ipAddress.getText(), portNumber);
 		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 
-
 		packet = new model.Packet(socket.getLocalSocketAddress().toString(),portNumber, clientName.getText());
 		outStream.writeObject(packet);
-
-		Thread thread = new Thread(this);
-		thread.start();
-
-
-		System.out.println("model.Packet received from server");
-
-//		outStream.close();
-//		socket.close();
-
-
-
-	}
-
-	@Override
-	public void run() {
-		try {
-			ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
-			Packet clientPacket = null;
-			clientPacket = (Packet) inStream.readObject();
-			System.out.println("Game Result is: " + clientPacket.getWinnerMsg());
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+		outStream.reset();
+		return outStream;
 	}
 }

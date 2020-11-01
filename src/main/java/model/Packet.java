@@ -8,12 +8,22 @@ public class Packet implements Serializable {
     private int portNum;
     private PlayerDetails playerDetails;
     private String winnerMsg;
+    private boolean serverStatus;
 
 
     public Packet(String ipAddress, int portNum, String name) {
         this.ipAddress = ipAddress;
         this.portNum = portNum;
         this.playerDetails = new PlayerDetails(name);
+        this.serverStatus = true;
+    }
+
+    public boolean isServerStatus() {
+        return serverStatus;
+    }
+
+    public void setServerStatus(boolean serverStatus) {
+        this.serverStatus = serverStatus;
     }
 
     public ArrayList<Card> giveHand(ArrayList<Card> hand){
@@ -41,12 +51,12 @@ public class Packet implements Serializable {
     public void setWinnerMsg(String winnerMsg) {
         this.winnerMsg = winnerMsg;
     }
-
-
+  
     /* Player details implementation */
     public class PlayerDetails implements Serializable{
         private String playerName;
-        private ArrayList<Card> hand;
+        private ArrayList<Card> playerHand;
+        private ArrayList<Card> bankerHand;
         private int bidAmount;
         private String betChoice;
         private boolean isOnline;
@@ -57,31 +67,39 @@ public class Packet implements Serializable {
         }
 
         public String getPlayerName() {
-            return playerName;
+            return this.playerName;
         }
 
         public void setPlayerName(String playerName) {
             this.playerName = playerName;
         }
 
-        public ArrayList<Card> getHand() {
-            return hand;
+        public ArrayList<Card> getPlayerHand() {
+            return playerHand;
         }
 
-        public void setHand(ArrayList<Card> hand) {
-            this.hand = hand;
+        public void setPlayerHand(ArrayList<Card> playerHand) {
+            this.playerHand = playerHand;
+        }
+
+        public ArrayList<Card> getBankerHand() {
+            return bankerHand;
+        }
+
+        public void setBankerHand(ArrayList<Card> bankerHand) {
+            this.bankerHand = bankerHand;
         }
 
         public int getBidAmount() {
-            return bidAmount;
+            return this.bidAmount;
         }
 
         public void setBidAmount(int bidAmount) {
             this.bidAmount = bidAmount;
         }
 
-        public String getBetChoice() {
-            return betChoice;
+        public String  getBetChoice() {
+            return this.betChoice;
         }
 
         public void setBetChoice(String betChoice) {
@@ -89,11 +107,11 @@ public class Packet implements Serializable {
         }
 
         public boolean isOnline() {
-            return isOnline;
+            return this.isOnline;
         }
 
         public void setOnline(boolean online) {
-            isOnline = online;
+            this.isOnline = online;
         }
     }
 
