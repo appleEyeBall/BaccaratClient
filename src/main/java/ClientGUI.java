@@ -4,11 +4,11 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import model.Card;
 import model.CardVisual;
 import model.Packet;
@@ -30,6 +30,12 @@ public class ClientGUI extends Thread implements EventHandler {
     HBox playerAreaSecond;
     HBox bankerAreaFirst;
     HBox bankerAreaSecond;
+    Button play;
+    Button quit;
+    Button playerWins;
+    Button bankerWins;
+    Button tie;
+    TextField dollars;
 
 
     Socket socket;
@@ -52,17 +58,12 @@ public class ClientGUI extends Thread implements EventHandler {
 
         playArea = new HBox();
         createPlayArea();
+        bidRow = new HBox();
+        bidRow.setSpacing(30);
+        createControlsArea();
 
-        controlsArea = new HBox();
-
-        gameScene.getChildren().addAll(scoreRow,playArea, controlsArea);
-
+        gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
         this.start();
-    }
-
-    private void listenForServerResponse() {
-
-
     }
 
 
@@ -96,7 +97,7 @@ public class ClientGUI extends Thread implements EventHandler {
 
     }
     public void createPlayArea(){
-        playArea.setMinHeight(350);
+        playArea.setMinHeight(370);
         Card sampleCard = new Card("test", 0);
         CardVisual cardVisual = new CardVisual(sampleCard);
         cardVisual.getVisual().setVisible(false);
@@ -158,13 +159,73 @@ public class ClientGUI extends Thread implements EventHandler {
 
 
     }
+    public void createControlsArea(){
+        VBox bidAmount = new VBox();
+        Label bidLabel = new Label();
+        bidLabel.setText("Enter Your Bid Amount");
+        bidLabel.setAlignment(Pos.CENTER);
+        bidLabel.setPrefSize(180,50);
+        dollars = new TextField();
+        dollars.setPromptText("$");
+        dollars.setPrefSize(180,30);
+        dollars.setAlignment(Pos.CENTER);
+        bidAmount.getChildren().addAll(bidLabel,dollars);
 
+        VBox betChoices = new VBox();
+        Label betsLabel = new Label();
+        betsLabel.setText("What will you bet on?");
+        betsLabel.setPrefSize(180,50);
+
+        playerWins = new Button();
+        playerWins.setText("Player");
+        playerWins.setAlignment(Pos.CENTER);
+        playerWins.setPrefSize(180,30);
+        playerWins.setOnAction(this);
+
+        bankerWins = new Button();
+        bankerWins.setText("Banker");
+        bankerWins.setAlignment(Pos.CENTER);
+        bankerWins.setPrefSize(180,30);
+        bankerWins.setOnAction(this);
+
+        tie = new Button();
+        tie.setText("Tie");
+        tie.setAlignment(Pos.CENTER);
+        tie.setPrefSize(180,30);
+        tie.setOnAction(this);
+        betChoices.setSpacing(10);
+
+        betChoices.getChildren().addAll(betsLabel,playerWins,bankerWins,tie);
+
+        VBox controls = new VBox();
+        play = new Button();
+        play.setText("Play");
+        play.setAlignment(Pos.CENTER);
+        play.setPrefSize(80,50);
+        play.setOnAction(this);
+
+        quit = new Button();
+        quit.setText("Quit");
+        quit.setAlignment(Pos.CENTER);
+        quit.setPrefSize(80,50);
+        quit.setOnAction(this);
+        controls.setSpacing(30);
+        controls.setAlignment(Pos.TOP_RIGHT);
+
+        controls.getChildren().addAll(play,quit);
+
+        bidRow.setPadding(new Insets(20,10,10,10));
+        bidRow.getChildren().addAll(bidAmount,betChoices, controls);
+
+    }
     @Override
     public void handle(Event event) {
         if (event.getSource() == makeDraw){     // send demo packet to server
             try {
                 out.reset();            // reset the ObjectOutputStream
-                packet.getPlayerDetails().setBidAmount(50);
+                packet.get
+                  
+                  erDetails().setBidAmount(50);
                 packet.getPlayerDetails().setBetChoice("Player");
                 out.writeObject(packet);
                 System.out.println("sent packet to server");
@@ -173,6 +234,9 @@ public class ClientGUI extends Thread implements EventHandler {
                 e.printStackTrace();
             }
 
+
+        }
+        if(event.getSource() == play){
 
         }
 

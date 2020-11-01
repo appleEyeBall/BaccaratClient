@@ -1,5 +1,4 @@
 package model;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -52,7 +51,7 @@ public class Packet implements Serializable {
     public void setWinnerMsg(String winnerMsg) {
         this.winnerMsg = winnerMsg;
     }
-
+  
     /* Player details implementation */
     public class PlayerDetails implements Serializable{
         private String playerName;
@@ -61,7 +60,6 @@ public class Packet implements Serializable {
         private int bidAmount;
         private String betChoice;
         private boolean isOnline;
-
 
         public PlayerDetails(String playerName) {
             this.playerName = playerName;
