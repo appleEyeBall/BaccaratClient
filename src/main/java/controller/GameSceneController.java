@@ -44,8 +44,13 @@ public class GameSceneController extends Thread implements EventHandler {
     ObjectOutputStream out;
     ObjectInputStream in;
     int countClicks;
+    int drawBtnClicks;
+    int playerCard;
+    int bankerCard;
     Label playerCurrentScore;
     Label bankerCurrentScore;
+    ArrayList<Integer> playerScoreList;
+    ArrayList<Integer> bankerScoreList;
 
     public GameSceneController(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
         this.socket = socket;
@@ -53,21 +58,19 @@ public class GameSceneController extends Thread implements EventHandler {
         this.packet = packet;
         this.out = out;
 //        in = new ObjectInputStream(this.socket.getInputStream());
-        countClicks = 0;
         gameScene.setPadding(new Insets(10,10,10,10));
 
         scoreRow =  new HBox();
         createScoreRow();
-
         playArea = new HBox();
         createPlayArea();
         bidRow = new HBox();
         bidRow.setSpacing(30);
         createControlsArea();
+        initializeGame();
 
         gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
         this.start();
-//        displayResults();
 
     }
 
@@ -194,6 +197,7 @@ public class GameSceneController extends Thread implements EventHandler {
         playBtn.setText("Play");
         playBtn.setAlignment(Pos.CENTER);
         playBtn.setPrefSize(80,50);
+
         playBtn.setOnAction(this);
 
         quitBtn = new Button();
@@ -241,10 +245,24 @@ public class GameSceneController extends Thread implements EventHandler {
     public void handle(Event event) {
         if (event.getSource() == makeDraw && packet.getPlayerDetails().getPlayerHand()==null) {     // send demo packet to server
             try {
+
                 packet.actionRequest = Util.ACTION_REQUEST_DRAW;
                 out.reset();            // reset the ObjectOutputStream
                 out.writeObject(packet);
                 System.out.println("sent packet to server");
+//                drawBtnClicks++;
+//
+//                if(drawBtnClicks % 2 == 0){
+//                    playerCard++;
+//                    updateCurrentScores(packet.getPlayerDetails().getPlayerHand(),playerCurrentScore,playerCard);
+//                    //playerScoreList(playerCard);
+//
+//                }
+//                else{
+//                    bankerCard++;
+//                    updateCurrentScores(packet.getPlayerDetails().getBankerHand(),bankerCurrentScore,bankerCard);
+//                }
+
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -291,26 +309,25 @@ public class GameSceneController extends Thread implements EventHandler {
                 packet.getPlayerDetails().setBetChoice(playerWins.getText());
             }
             else{
-                bankerWins.setDisable(false);
-                tie.setDisable(false);
-                playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+                 bankerWins.setDisable(false);
+                 tie.setDisable(false);
+                 playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
             }
 
         }
         if(event.getSource() == bankerWins){
-            countClicks++;
-            if(countClicks % 2!= 0) {
+           countClicks++;
+           if(countClicks % 2!= 0) {
                 playerWins.setDisable(true);
                 tie.setDisable(true);
                 bankerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
                 packet.getPlayerDetails().setBetChoice(bankerWins.getText());
-            }
-            else{
-                playerWins.setDisable(false);
-                tie.setDisable(false);
-                bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
-            }
-
+           }
+           else{
+               playerWins.setDisable(false);
+               tie.setDisable(false);
+               bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+           }
         }
         if(event.getSource() == tie){
             countClicks++;
@@ -331,12 +348,10 @@ public class GameSceneController extends Thread implements EventHandler {
     }
 
     public void restart(){
-        playerAreaFirst.getChildren().clear();
-        playerAreaSecond.getChildren().clear();
-        bankerAreaFirst.getChildren().clear();
-        bankerAreaSecond.getChildren().clear();
+     
         // TODO: Do other restart things here but leave winnings in packet untouched
     }
+
 
     @Override
     public void run() {
@@ -374,18 +389,34 @@ public class GameSceneController extends Thread implements EventHandler {
         }
     }
 
-    public void updateCurrentScores(ArrayList<Card> hand, Label scoreLbl){
+    public void updateCurrentScores(ArrayList<Card> hand, Label scoreLbl,int index){
         ArrayList<Card> tempHand = new ArrayList<>();
-        ArrayList<Integer> currScore = new ArrayList<Integer>();
+        tempHand = hand;
+        ArrayList<Integer> currScore = new ArrayList<>();
         currScore.add(0);
 
-        for(Card card: hand){
+        for(Card card: tempHand){
             tempHand.add(card);
             currScore.add(packet.getPlayerDetails().getHandTotal(tempHand));
-            scoreLbl.setText(String.valueOf(currScore));
         }
+        scoreLbl.setText(String.valueOf(currScore.get(index)));
+    }
+
+    public void initializeGame(){
+
+       playBtn.setDisable(true);
+        makeDraw.setDisable(true);
+        countClicks = 0;
+        drawBtnClicks = 0;
+        playerCard = 0;
+        bankerCard = 0;
+         playerAreaFirst.getChildren().clear();
+        playerAreaSecond.getChildren().clear();
+        bankerAreaFirst.getChildren().clear();
+        bankerAreaSecond.getChildren().clear();
 
     }
+
     public void updateWithCards(Packet packet){
        Platform.runLater(new Runnable() {
            @Override
