@@ -1,30 +1,30 @@
+package controller;
+
 import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Card;
 import model.CardVisual;
 import model.Packet;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class ClientGUI extends Thread implements EventHandler {
+public class GameSceneController extends Thread implements EventHandler {
 
     VBox gameScene;
     HBox scoreRow;
     HBox playArea;
-    HBox controlsArea;
+    HBox bidRow;
     Button makeDraw;
     HBox playerAreaFirst;
     HBox playerAreaSecond;
@@ -36,18 +36,17 @@ public class ClientGUI extends Thread implements EventHandler {
     Button bankerWins;
     Button tie;
     TextField dollars;
-
-
     Socket socket;
     Packet packet;
     ObjectOutputStream out;
     ObjectInputStream in;
+    int countClicks;
 
-    public ClientGUI(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
+    public GameSceneController(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
         this.socket = socket;
         this.gameScene = gameScene;
         this.packet = packet;
-
+        countClicks = 0;
         this.out = out;
         in = new ObjectInputStream(this.socket.getInputStream());
 
@@ -81,12 +80,12 @@ public class ClientGUI extends Thread implements EventHandler {
         baccarat.setAlignment(Pos.CENTER);
 
         playerCurrentScore.setPrefSize(50,50);
-        playerCurrentScore.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
+        playerCurrentScore.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
         bankerCurrentScore.setPrefSize(50,50);
-        bankerCurrentScore.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
+        bankerCurrentScore.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        playerLabel.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
-        bankerLabel.setBackground(new Background(new BackgroundFill(Color.LIGHTCYAN, CornerRadii.EMPTY, Insets.EMPTY)));
+        playerLabel.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
+        bankerLabel.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
 
         playerLabel.setPrefSize(140,50);
         bankerLabel.setPrefSize(140,50);
@@ -153,7 +152,7 @@ public class ClientGUI extends Thread implements EventHandler {
         // TODO: end of hard code
 
 
-        playArea.setBackground(new Background(new BackgroundFill(Color.PALEVIOLETRED, null, null)));
+        playArea.setBackground(new Background(new BackgroundFill(Color.DARKGREEN, null, null)));
         playArea.getChildren().addAll(playerArea, drawArea, bankerArea);
         playArea.setPadding(new Insets(10,10,0,0));
 
@@ -218,14 +217,39 @@ public class ClientGUI extends Thread implements EventHandler {
         bidRow.getChildren().addAll(bidAmount,betChoices, controls);
 
     }
+
+    public void displayResults(){
+        String result;
+        if(packet.getPlayerDetails().getBetChoice().equals(packet.getWinnerMsg())){
+            result = "won";
+        }
+        else{
+            result = "lose";
+        }
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText("--Game Results--");
+        ArrayList<Card> playerHand = packet.getPlayerDetails().getPlayerHand();
+        ArrayList<Card> bankerHand = packet.getPlayerDetails().getBankerHand();
+        alert.setContentText("Player's hand Total : " + packet.getPlayerDetails().getHandTotal(playerHand));
+        alert.setContentText("Banker's hand Total : " + packet.getPlayerDetails().getHandTotal(bankerHand));
+
+        if(packet.getWinnerMsg().equals("Tie")){
+            alert.setContentText("It's a Tie !");
+        }
+        else {
+            alert.setContentText(packet.getWinnerMsg() + "wins !");
+        }
+        alert.setContentText("You bet on " + packet.getPlayerDetails().getBetChoice() + ", you " + result);
+
+        alert.showAndWait();
+    }
     @Override
     public void handle(Event event) {
         if (event.getSource() == makeDraw){     // send demo packet to server
             try {
                 out.reset();            // reset the ObjectOutputStream
-                packet.get
-                  
-                  erDetails().setBidAmount(50);
+                packet.getPlayerDetails().setBidAmount(50);
                 packet.getPlayerDetails().setBetChoice("Player");
                 out.writeObject(packet);
                 System.out.println("sent packet to server");
@@ -237,6 +261,51 @@ public class ClientGUI extends Thread implements EventHandler {
 
         }
         if(event.getSource() == play){
+
+        }
+        if(event.getSource() == playerWins){
+            countClicks++;
+            if(countClicks % 2!= 0) {
+                bankerWins.setDisable(true);
+                tie.setDisable(true);
+                playerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                packet.getPlayerDetails().setBetChoice(playerWins.getText());
+            }
+            else{
+                bankerWins.setDisable(false);
+                tie.setDisable(false);
+                playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+            }
+
+        }
+        if(event.getSource() == bankerWins){
+            countClicks++;
+            if(countClicks % 2!= 0) {
+                playerWins.setDisable(true);
+                tie.setDisable(true);
+                bankerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                packet.getPlayerDetails().setBetChoice(bankerWins.getText());
+            }
+            else{
+                playerWins.setDisable(false);
+                tie.setDisable(false);
+                bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+            }
+
+        }
+        if(event.getSource() == tie){
+            countClicks++;
+            if(countClicks % 2!= 0) {
+                bankerWins.setDisable(true);
+                playerWins.setDisable(true);
+                tie.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
+                packet.getPlayerDetails().setBetChoice(tie.getText());
+            }
+            else{
+                playerWins.setDisable(false);
+                bankerWins.setDisable(false);
+                tie.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+            }
 
         }
 
@@ -271,6 +340,7 @@ public class ClientGUI extends Thread implements EventHandler {
            public void run() {
                ArrayList<Card> hand = packet.getPlayerDetails().getPlayerHand();
                CardVisual cardVisual = new CardVisual(hand.get(0));
+
                if (playerAreaFirst.getChildren().size() ==0){
                    System.out.println("size is 0");
                    playerAreaFirst.getChildren().add(cardVisual.getVisual());
