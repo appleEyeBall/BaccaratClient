@@ -41,6 +41,8 @@ public class GameSceneController extends Thread implements EventHandler {
     ObjectOutputStream out;
     ObjectInputStream in;
     int countClicks;
+    Label playerCurrentScore;
+    Label bankerCurrentScore;
 
     public GameSceneController(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
         this.socket = socket;
@@ -63,17 +65,19 @@ public class GameSceneController extends Thread implements EventHandler {
 
         gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
         this.start();
+        displayResults();
     }
 
 
     public void createScoreRow(){
 
-        Label playerCurrentScore = new Label("0");
+        playerCurrentScore = new Label("0");
         playerCurrentScore.setAlignment(Pos.CENTER);
         Label playerLabel = new Label("PLAYER");
         Label baccarat = new Label("BACCARAT");
         Label bankerLabel = new Label("BANKER");
-        Label bankerCurrentScore = new Label("0");
+
+        bankerCurrentScore = new Label("0");
         bankerCurrentScore.setAlignment(Pos.CENTER);
         bankerLabel.setAlignment(Pos.CENTER);
         playerLabel.setAlignment(Pos.CENTER);
@@ -90,6 +94,9 @@ public class GameSceneController extends Thread implements EventHandler {
         playerLabel.setPrefSize(140,50);
         bankerLabel.setPrefSize(140,50);
         baccarat.setPrefSize(120,50);
+
+        //update the current scores for both banker and player
+        //playerCurrentScore.setText(packet.getPlayerDetails().getHandTotal());
 
         scoreRow.setSpacing(600/16);  // might make a UTIL.java later don't worry
         scoreRow.getChildren().addAll(playerCurrentScore,playerLabel, baccarat,bankerLabel, bankerCurrentScore);
@@ -332,6 +339,19 @@ public class GameSceneController extends Thread implements EventHandler {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    public void updateCurrentScores(ArrayList<Card> hand, Label scoreLbl){
+        ArrayList<Card> tempHand = new ArrayList<>();
+        ArrayList<Integer> currScore = new ArrayList<Integer>();
+        currScore.add(0);
+
+        for(Card card: hand){
+            tempHand.add(card);
+            currScore.add(packet.getPlayerDetails().getHandTotal(tempHand));
+            scoreLbl.setText(String.valueOf(currScore));
+        }
+
     }
 
     public void updateWithCards(Packet packet){
