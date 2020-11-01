@@ -1,5 +1,4 @@
 package model;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -44,19 +43,13 @@ public class Packet implements Serializable {
     }
 
 
-    enum GameResults
-    {
-        PLAYER, BANKER, DRAW;
-    }
-
     /* Player details implementation */
     public class PlayerDetails implements Serializable{
         private String playerName;
         private ArrayList<Card> hand;
         private int bidAmount;
-        private GameResults betChoice;
+        private String betChoice;
         private boolean isOnline;
-
 
         public PlayerDetails(String playerName) {
             this.playerName = playerName;
@@ -87,11 +80,11 @@ public class Packet implements Serializable {
             this.bidAmount = bidAmount;
         }
 
-        public GameResults getBetChoice() {
+        public String getBetChoice() {
             return betChoice;
         }
 
-        public void setBetChoice(GameResults betChoice) {
+        public void setBetChoice(String betChoice) {
             this.betChoice = betChoice;
         }
 
