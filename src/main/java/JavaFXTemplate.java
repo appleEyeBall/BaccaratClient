@@ -18,7 +18,7 @@ import java.net.Socket;
 public class JavaFXTemplate extends Application implements EventHandler, Serializable {
 	Stage primaryStage;
 	VBox mainRoot;
-	GameSceneController gameSceneController;
+	ClientGUI gameSceneController;
 	public TextField ipAddress;
 	public TextField clientName;
 	public TextField portNum;
@@ -67,7 +67,7 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 
 	public void showGameScene(ObjectOutputStream out) throws IOException {
 		mainRoot = new VBox();
-		gameSceneController = new GameSceneController(mainRoot, socket, packet, out);
+		gameSceneController = new ClientGUI(mainRoot, socket, packet, out);
 		primaryStage.setScene(new Scene(mainRoot,600,600));
 		primaryStage.show();
 

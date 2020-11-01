@@ -19,7 +19,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class GameSceneController extends Thread implements EventHandler {
+public class ClientGUI extends Thread implements EventHandler {
 
     VBox gameScene;
     HBox scoreRow;
@@ -37,7 +37,7 @@ public class GameSceneController extends Thread implements EventHandler {
     ObjectOutputStream out;
     ObjectInputStream in;
 
-    public GameSceneController(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
+    public ClientGUI(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
         this.socket = socket;
         this.gameScene = gameScene;
         this.packet = packet;

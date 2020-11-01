@@ -9,12 +9,22 @@ public class Packet implements Serializable {
     private int portNum;
     private PlayerDetails playerDetails;
     private String winnerMsg;
+    private boolean serverStatus;
 
 
     public Packet(String ipAddress, int portNum, String name) {
         this.ipAddress = ipAddress;
         this.portNum = portNum;
         this.playerDetails = new PlayerDetails(name);
+        this.serverStatus = true;
+    }
+
+    public boolean isServerStatus() {
+        return serverStatus;
+    }
+
+    public void setServerStatus(boolean serverStatus) {
+        this.serverStatus = serverStatus;
     }
 
     public ArrayList<Card> giveHand(ArrayList<Card> hand){
