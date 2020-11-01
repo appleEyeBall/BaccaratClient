@@ -13,7 +13,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Packet;
-
+import util.Util;
 import java.io.*;
 import java.net.Socket;
 
@@ -68,6 +68,7 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 	}
 
 	public void showGameScene(ObjectOutputStream out) throws IOException {
+		System.out.println("showing game scene");
 		mainRoot = new VBox();
 		gameSceneController = new GameSceneController(mainRoot, socket, packet, out);
 		primaryStage.setScene(new Scene(mainRoot,600,600));
@@ -80,6 +81,7 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 		if (event.getSource() == connectBtn){
 			try {
 				// connect to server, then show game scene
+				System.out.println("Connecting to server...");
 				ObjectOutputStream out = connectToServer(Integer.valueOf(portNum.getText()));
 				showGameScene(out);
 			} catch (IOException | ClassNotFoundException e) {    //
@@ -95,7 +97,9 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 
 		packet = new model.Packet(socket.getLocalSocketAddress().toString(),portNumber, clientName.getText());
+		packet.actionRequest = Util.ACTION_REQUEST_CONNECT;
 		outStream.writeObject(packet);
+		outStream.reset();
 		outStream.reset();
 		return outStream;
 	}

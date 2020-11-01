@@ -5,14 +5,17 @@ import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.*;
+
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Card;
 import model.CardVisual;
 import model.Packet;
-
-import javax.swing.*;
+import util.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -30,8 +33,8 @@ public class GameSceneController extends Thread implements EventHandler {
     HBox playerAreaSecond;
     HBox bankerAreaFirst;
     HBox bankerAreaSecond;
-    Button play;
-    Button quit;
+    Button playBtn;
+    Button quitBtn;
     Button playerWins;
     Button bankerWins;
     Button tie;
@@ -48,10 +51,9 @@ public class GameSceneController extends Thread implements EventHandler {
         this.socket = socket;
         this.gameScene = gameScene;
         this.packet = packet;
-        countClicks = 0;
         this.out = out;
-        in = new ObjectInputStream(this.socket.getInputStream());
-
+//        in = new ObjectInputStream(this.socket.getInputStream());
+        countClicks = 0;
         gameScene.setPadding(new Insets(10,10,10,10));
 
         scoreRow =  new HBox();
@@ -66,18 +68,20 @@ public class GameSceneController extends Thread implements EventHandler {
         gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
         this.start();
         displayResults();
+
     }
 
 
     public void createScoreRow(){
 
         playerCurrentScore = new Label("0");
+
         playerCurrentScore.setAlignment(Pos.CENTER);
         Label playerLabel = new Label("PLAYER");
         Label baccarat = new Label("BACCARAT");
         Label bankerLabel = new Label("BANKER");
-
         bankerCurrentScore = new Label("0");
+
         bankerCurrentScore.setAlignment(Pos.CENTER);
         bankerLabel.setAlignment(Pos.CENTER);
         playerLabel.setAlignment(Pos.CENTER);
@@ -90,7 +94,6 @@ public class GameSceneController extends Thread implements EventHandler {
 
         playerLabel.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
         bankerLabel.setBackground(new Background(new BackgroundFill(Color.INDIANRED, CornerRadii.EMPTY, Insets.EMPTY)));
-
         playerLabel.setPrefSize(140,50);
         bankerLabel.setPrefSize(140,50);
         baccarat.setPrefSize(120,50);
@@ -143,26 +146,9 @@ public class GameSceneController extends Thread implements EventHandler {
         bankerAreaSecond.setAlignment(Pos.CENTER);
         bankerArea.getChildren().addAll(bankerAreaFirst,  bankerAreaSecond);
 
-
-            // TODO: delete later hard code
-//        Card testCard = new Card("test", 7);
-//        CardVisual testCardVisual = new CardVisual(testCard);
-//        CardVisual testCardVisual2 = new CardVisual(testCard);
-//        CardVisual testCardVisual3 = new CardVisual(testCard);
-//        CardVisual testCardVisual4 = new CardVisual(testCard);
-//        CardVisual testCardVisual5 = new CardVisual(testCard);
-//        CardVisual testCardVisual6 = new CardVisual(testCard);
-//        playerAreaFirst.getChildren().addAll(testCardVisual.getVisual(), testCardVisual2.getVisual());
-//        playerAreaSecond.getChildren().add(testCardVisual3.getVisual());
-//        bankerAreaFirst.getChildren().addAll(testCardVisual4.getVisual(), testCardVisual5.getVisual());
-//        bankerAreaSecond.getChildren().add(testCardVisual6.getVisual());
-        // TODO: end of hard code
-
-
         playArea.setBackground(new Background(new BackgroundFill(Color.DARKGREEN, null, null)));
         playArea.getChildren().addAll(playerArea, drawArea, bankerArea);
         playArea.setPadding(new Insets(10,10,0,0));
-
 
     }
     public void createControlsArea(){
@@ -204,21 +190,21 @@ public class GameSceneController extends Thread implements EventHandler {
         betChoices.getChildren().addAll(betsLabel,playerWins,bankerWins,tie);
 
         VBox controls = new VBox();
-        play = new Button();
-        play.setText("Play");
-        play.setAlignment(Pos.CENTER);
-        play.setPrefSize(80,50);
-        play.setOnAction(this);
+        playBtn = new Button();
+        playBtn.setText("Play");
+        playBtn.setAlignment(Pos.CENTER);
+        playBtn.setPrefSize(80,50);
+        playBtn.setOnAction(this);
 
-        quit = new Button();
-        quit.setText("Quit");
-        quit.setAlignment(Pos.CENTER);
-        quit.setPrefSize(80,50);
-        quit.setOnAction(this);
+        quitBtn = new Button();
+        quitBtn.setText("Quit");
+        quitBtn.setAlignment(Pos.CENTER);
+        quitBtn.setPrefSize(80,50);
+        quitBtn.setOnAction(this);
         controls.setSpacing(30);
         controls.setAlignment(Pos.TOP_RIGHT);
 
-        controls.getChildren().addAll(play,quit);
+        controls.getChildren().addAll(playBtn, quitBtn);
 
         bidRow.setPadding(new Insets(20,10,10,10));
         bidRow.getChildren().addAll(bidAmount,betChoices, controls);
@@ -255,9 +241,8 @@ public class GameSceneController extends Thread implements EventHandler {
     public void handle(Event event) {
         if (event.getSource() == makeDraw){     // send demo packet to server
             try {
+                packet.actionRequest = Util.ACTION_REQUEST_DRAW;
                 out.reset();            // reset the ObjectOutputStream
-                packet.getPlayerDetails().setBidAmount(50);
-                packet.getPlayerDetails().setBetChoice("Player");
                 out.writeObject(packet);
                 System.out.println("sent packet to server");
 
@@ -267,9 +252,36 @@ public class GameSceneController extends Thread implements EventHandler {
 
 
         }
-        if(event.getSource() == play){
+
+        if(event.getSource() == playBtn){
+            // get all game info and send to server
+            packet.getPlayerDetails().setBidAmount(Integer.valueOf(dollars.getText()));
+            packet.actionRequest = Util.ACTION_REQUEST_PLAY;
+            try {
+                out.reset();
+                out.writeObject(packet);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
 
         }
+
+        if (event.getSource() == quitBtn){
+            // notify server that we are quitting, close resources, then quit
+            try {
+                packet.setClientPlaying(false);
+                out.reset();
+                out.writeObject(packet);
+                this.interrupt();   // interrupt the thread that listens for the server response
+                in.close();
+                out.close();
+                socket.close();
+                Platform.exit();
+                System.exit(0);
+            } catch (IOException e) {
+                e.printStackTrace();
+
         if(event.getSource() == playerWins){
             countClicks++;
             if(countClicks % 2!= 0) {
@@ -321,6 +333,7 @@ public class GameSceneController extends Thread implements EventHandler {
     @Override
     public void run() {
         try {
+            in = new ObjectInputStream(this.socket.getInputStream());
             while (true){
                 System.out.println("Waiting on response from server...");
                 Packet packetFromServer = (Packet) in.readObject();
@@ -353,14 +366,12 @@ public class GameSceneController extends Thread implements EventHandler {
         }
 
     }
-
     public void updateWithCards(Packet packet){
        Platform.runLater(new Runnable() {
            @Override
            public void run() {
                ArrayList<Card> hand = packet.getPlayerDetails().getPlayerHand();
                CardVisual cardVisual = new CardVisual(hand.get(0));
-
                if (playerAreaFirst.getChildren().size() ==0){
                    System.out.println("size is 0");
                    playerAreaFirst.getChildren().add(cardVisual.getVisual());
