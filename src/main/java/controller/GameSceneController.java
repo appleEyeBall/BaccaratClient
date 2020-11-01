@@ -243,7 +243,7 @@ public class GameSceneController extends Thread implements EventHandler {
     }
     @Override
     public void handle(Event event) {
-        if (event.getSource() == makeDraw){     // send demo packet to server
+        if (event.getSource() == makeDraw && packet.getPlayerDetails().getPlayerHand()==null) {     // send demo packet to server
             try {
 
                 packet.actionRequest = Util.ACTION_REQUEST_DRAW;
@@ -267,12 +267,14 @@ public class GameSceneController extends Thread implements EventHandler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
+        }
+        else{       // we don't wanna resend packet to server
+            updateWithCards(packet);
         }
 
         if(event.getSource() == playBtn){
             // get all game info and send to server
+            restart();
             packet.getPlayerDetails().setBidAmount(Integer.valueOf(dollars.getText()));
             packet.actionRequest = Util.ACTION_REQUEST_PLAY;
             try {
@@ -286,20 +288,16 @@ public class GameSceneController extends Thread implements EventHandler {
         }
 
         if (event.getSource() == quitBtn) {
-            // notify server that we are quitting, close resources, then quit
             try {
-                packet.setClientPlaying(0);
+                // notify the server of our intention to quit game
+                packet.setClientPlaying(-1);
+                packet.actionRequest = Util.ACTION_REQUEST_QUIT;
                 out.reset();
                 out.writeObject(packet);
-                this.interrupt();   // interrupt the thread that listens for the server response
-                in.close();
-                out.close();
-                socket.close();
-                Platform.exit();
-                System.exit(0);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            System.out.println("sent quit notification to server");
         }
 
         if(event.getSource() == playerWins){
@@ -330,7 +328,6 @@ public class GameSceneController extends Thread implements EventHandler {
                tie.setDisable(false);
                bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
            }
-
         }
         if(event.getSource() == tie){
             countClicks++;
@@ -350,6 +347,12 @@ public class GameSceneController extends Thread implements EventHandler {
 
     }
 
+    public void restart(){
+     
+        // TODO: Do other restart things here but leave winnings in packet untouched
+    }
+
+
     @Override
     public void run() {
         try {
@@ -363,10 +366,22 @@ public class GameSceneController extends Thread implements EventHandler {
                     System.out.println("Not my packet. ignoring...");
                     continue;
                 }
-                System.out.println("IT is my packet");
-                // assign packet to what we get from server
-                packet = packetFromServer;
-                updateWithCards(packet);
+                else if (packetFromServer.actionRequest.equals(Util.ACTION_REQUEST_QUIT)){
+                    // server has told us we can quit
+                    System.out.println("IT is my packet, quitting");
+                    // assign packet to what we get from server
+                    this.interrupt();   // interrupt the thread that listens for the server response
+                    in.close();
+                    out.close();
+                    socket.close();
+                    Platform.exit();
+                    System.exit(0);
+                }
+                else{
+                    System.out.println("IT is my packet, updating...");
+                    packet = packetFromServer;
+                    updateWithCards(packet);
+                }
 
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -389,12 +404,16 @@ public class GameSceneController extends Thread implements EventHandler {
 
     public void initializeGame(){
 
-       // playBtn.setDisable(true);
-        //makeDraw.setDisable(true);
+       playBtn.setDisable(true);
+        makeDraw.setDisable(true);
         countClicks = 0;
         drawBtnClicks = 0;
         playerCard = 0;
         bankerCard = 0;
+         playerAreaFirst.getChildren().clear();
+        playerAreaSecond.getChildren().clear();
+        bankerAreaFirst.getChildren().clear();
+        bankerAreaSecond.getChildren().clear();
 
     }
 
@@ -402,20 +421,48 @@ public class GameSceneController extends Thread implements EventHandler {
        Platform.runLater(new Runnable() {
            @Override
            public void run() {
-               ArrayList<Card> hand = packet.getPlayerDetails().getPlayerHand();
-               CardVisual cardVisual = new CardVisual(hand.get(0));
-               if (playerAreaFirst.getChildren().size() ==0){
-                   System.out.println("size is 0");
+               System.out.println("Started run later");
+               ArrayList<Card> playerHand = packet.getPlayerDetails().getPlayerHand();
+               ArrayList<Card> bankerHand = packet.getPlayerDetails().getBankerHand();
+               if (playerHand == null || bankerHand == null){
+                   return;
+               }
+               else if (playerAreaFirst.getChildren().size() == 0){
+                   CardVisual cardVisual = new CardVisual(playerHand.get(0));
                    playerAreaFirst.getChildren().add(cardVisual.getVisual());
-                   System.out.println("size changed to "+playerAreaFirst.getChildren().size());
+               }
+               else if (bankerAreaFirst.getChildren().size() == 0){
+                   CardVisual cardVisual = new CardVisual(bankerHand.get(0));
+                   bankerAreaFirst.getChildren().add(cardVisual.getVisual());
                }
                else if (playerAreaFirst.getChildren().size() ==1){
-                   System.out.println("size is 1");
+                   CardVisual cardVisual = new CardVisual(playerHand.get(1));
                    playerAreaFirst.getChildren().add(cardVisual.getVisual());
                }
-               else{
-                   System.out.println("size is 2");
+               else if (bankerAreaFirst.getChildren().size() ==1){
+                   CardVisual cardVisual = new CardVisual(bankerHand.get(1));
+                   bankerAreaFirst.getChildren().add(cardVisual.getVisual());
+               }
+               else if (playerAreaSecond.getChildren().size() == 0 && playerHand.size()>2){
+                   CardVisual cardVisual = new CardVisual(playerHand.get(2));
                    playerAreaSecond.getChildren().add(cardVisual.getVisual());
+               }
+               else if (bankerAreaSecond.getChildren().size() == 0 && bankerHand.size()>2){
+                   CardVisual cardVisual = new CardVisual(bankerHand.get(2));
+                   bankerAreaSecond.getChildren().add(cardVisual.getVisual());
+               }
+               else{
+                   System.out.println("gonna send a game-over request");
+                   packet.getPlayerDetails().setPlayerHand(null);
+                   packet.getPlayerDetails().setBankerHand(null);
+                   try {
+                       packet.actionRequest = Util.ACTION_REQUEST_GAME_OVER;
+                       out.reset();
+                       out.writeObject(packet);
+                       // TODO: deactivate buttons appropriately. (should be a function)
+                   } catch (IOException e) {
+                       e.printStackTrace();
+                   }
                }
 
            }
