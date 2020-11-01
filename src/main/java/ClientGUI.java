@@ -1,3 +1,4 @@
+import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -10,26 +11,46 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Card;
 import model.CardVisual;
+import model.Packet;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
 
-public class ClientGUI implements EventHandler {
+public class ClientGUI extends Thread implements EventHandler {
 
     VBox gameScene;
-   HBox scoreRow;
-   HBox playArea;
-   HBox bidRow;
-   Button makeDraw;
-   Button play;
-   Button quit;
-   Button playerWins;
-   Button bankerWins;
-   Button tie;
-   TextField dollars;
+    HBox scoreRow;
+    HBox playArea;
+    HBox controlsArea;
+    Button makeDraw;
+    HBox playerAreaFirst;
+    HBox playerAreaSecond;
+    HBox bankerAreaFirst;
+    HBox bankerAreaSecond;
+    Button play;
+    Button quit;
+    Button playerWins;
+    Button bankerWins;
+    Button tie;
+    TextField dollars;
 
-    public ClientGUI(VBox gameScene) throws IOException {
 
+    Socket socket;
+    Packet packet;
+    ObjectOutputStream out;
+    ObjectInputStream in;
+
+    public ClientGUI(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
+        this.socket = socket;
         this.gameScene = gameScene;
+        this.packet = packet;
+
+        this.out = out;
+        in = new ObjectInputStream(this.socket.getInputStream());
+
         gameScene.setPadding(new Insets(10,10,10,10));
 
         scoreRow =  new HBox();
@@ -37,15 +58,14 @@ public class ClientGUI implements EventHandler {
 
         playArea = new HBox();
         createPlayArea();
-
         bidRow = new HBox();
         bidRow.setSpacing(30);
         createControlsArea();
 
         gameScene.getChildren().addAll(scoreRow,playArea, bidRow);
-
-
+        this.start();
     }
+
 
     public void createScoreRow(){
 
@@ -93,10 +113,10 @@ public class ClientGUI implements EventHandler {
         bankerArea.setMinWidth(600/2.5);
 
         // divide playerArea into column into 2 rows
-        HBox playerAreaFirst = new HBox();
+        playerAreaFirst = new HBox();
         playerAreaFirst.setAlignment(Pos.CENTER);
         playerAreaFirst.setSpacing(10);
-        HBox playerAreaSecond = new HBox();
+        playerAreaSecond = new HBox();
         playerAreaSecond.setAlignment(Pos.CENTER);
         playerArea.getChildren().addAll(playerAreaFirst, playerAreaSecond);
 
@@ -110,29 +130,30 @@ public class ClientGUI implements EventHandler {
 
 
         // divide bankerArea into column into 2 rows
-        HBox bankerAreaFirst = new HBox();
+        bankerAreaFirst = new HBox();
         bankerAreaFirst.setAlignment(Pos.CENTER);
         bankerAreaFirst.setSpacing(10);
-        HBox bankerAreaSecond = new HBox();
+        bankerAreaSecond = new HBox();
         bankerAreaSecond.setAlignment(Pos.CENTER);
         bankerArea.getChildren().addAll(bankerAreaFirst,  bankerAreaSecond);
 
 
             // TODO: delete later hard code
-        Card testCard = new Card("test", 7);
-        CardVisual testCardVisual = new CardVisual(testCard);
-        CardVisual testCardVisual2 = new CardVisual(testCard);
-        CardVisual testCardVisual3 = new CardVisual(testCard);
-        CardVisual testCardVisual4 = new CardVisual(testCard);
-        CardVisual testCardVisual5 = new CardVisual(testCard);
-        CardVisual testCardVisual6 = new CardVisual(testCard);
-        playerAreaFirst.getChildren().addAll(testCardVisual.getVisual(), testCardVisual2.getVisual());
-        playerAreaSecond.getChildren().add(testCardVisual3.getVisual());
-        bankerAreaFirst.getChildren().addAll(testCardVisual4.getVisual(), testCardVisual5.getVisual());
-        bankerAreaSecond.getChildren().add(testCardVisual6.getVisual());
+//        Card testCard = new Card("test", 7);
+//        CardVisual testCardVisual = new CardVisual(testCard);
+//        CardVisual testCardVisual2 = new CardVisual(testCard);
+//        CardVisual testCardVisual3 = new CardVisual(testCard);
+//        CardVisual testCardVisual4 = new CardVisual(testCard);
+//        CardVisual testCardVisual5 = new CardVisual(testCard);
+//        CardVisual testCardVisual6 = new CardVisual(testCard);
+//        playerAreaFirst.getChildren().addAll(testCardVisual.getVisual(), testCardVisual2.getVisual());
+//        playerAreaSecond.getChildren().add(testCardVisual3.getVisual());
+//        bankerAreaFirst.getChildren().addAll(testCardVisual4.getVisual(), testCardVisual5.getVisual());
+//        bankerAreaSecond.getChildren().add(testCardVisual6.getVisual());
+        // TODO: end of hard code
+
+
         playArea.setBackground(new Background(new BackgroundFill(Color.PALEVIOLETRED, null, null)));
-
-
         playArea.getChildren().addAll(playerArea, drawArea, bankerArea);
         playArea.setPadding(new Insets(10,10,0,0));
 
@@ -197,10 +218,22 @@ public class ClientGUI implements EventHandler {
         bidRow.getChildren().addAll(bidAmount,betChoices, controls);
 
     }
-
     @Override
     public void handle(Event event) {
-        if (event.getSource() == makeDraw){
+        if (event.getSource() == makeDraw){     // send demo packet to server
+            try {
+                out.reset();            // reset the ObjectOutputStream
+                packet.get
+                  
+                  erDetails().setBidAmount(50);
+                packet.getPlayerDetails().setBetChoice("Player");
+                out.writeObject(packet);
+                System.out.println("sent packet to server");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
 
         }
         if(event.getSource() == play){
@@ -209,4 +242,51 @@ public class ClientGUI implements EventHandler {
 
     }
 
+    @Override
+    public void run() {
+        try {
+            while (true){
+                System.out.println("Waiting on response from server...");
+                Packet packetFromServer = (Packet) in.readObject();
+
+                // if packet does not belong to this client, ignore it
+                if (!packetFromServer.getIpAddress().toString().equals(socket.getLocalSocketAddress().toString())){
+                    System.out.println("Not my packet. ignoring...");
+                    continue;
+                }
+                System.out.println("IT is my packet");
+                // assign packet to what we get from server
+                packet = packetFromServer;
+                updateWithCards(packet);
+
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateWithCards(Packet packet){
+       Platform.runLater(new Runnable() {
+           @Override
+           public void run() {
+               ArrayList<Card> hand = packet.getPlayerDetails().getPlayerHand();
+               CardVisual cardVisual = new CardVisual(hand.get(0));
+               if (playerAreaFirst.getChildren().size() ==0){
+                   System.out.println("size is 0");
+                   playerAreaFirst.getChildren().add(cardVisual.getVisual());
+                   System.out.println("size changed to "+playerAreaFirst.getChildren().size());
+               }
+               else if (playerAreaFirst.getChildren().size() ==1){
+                   System.out.println("size is 1");
+                   playerAreaFirst.getChildren().add(cardVisual.getVisual());
+               }
+               else{
+                   System.out.println("size is 2");
+                   playerAreaSecond.getChildren().add(cardVisual.getVisual());
+               }
+
+           }
+       });
+
+    }
 }
