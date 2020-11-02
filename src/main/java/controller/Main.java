@@ -12,12 +12,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import model.Packet;
+import model.BaccaratInfo;
 import util.Util;
 import java.io.*;
 import java.net.Socket;
 
-public class JavaFXTemplate extends Application implements EventHandler, Serializable {
+public class Main extends Application implements EventHandler, Serializable {
 	Stage primaryStage;
 	VBox mainRoot;
 	GameSceneController gameSceneController;
@@ -25,18 +25,13 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 	public TextField clientName;
 	public TextField portNum;
 	public Button connectBtn;
-	private Packet packet;
+	private BaccaratInfo baccaratInfo;
 	private Socket socket;
 
-//	public static void main(String[] args) {
-//		// TODO Auto-generated method stub
-//		launch(args);
-//	}
 
-	//feel free to remove the starter code from this method
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		this.primaryStage = primaryStage;
+		this.primaryStage = primaryStage;  // initialze the primary stage
 
 		VBox parent = new VBox();
 		parent.setPadding(new Insets(100,120,0,120));
@@ -54,8 +49,8 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 		ipAddress.setAlignment(Pos.CENTER);
 		portNum.setAlignment(Pos.CENTER);
 		connectBtn.setAlignment(Pos.CENTER);
-		connectBtn.setPrefWidth(70);
-		connectBtn.setPrefHeight(36);
+		connectBtn.setPrefWidth(100);
+		connectBtn.setPrefHeight(40);
 
 		connectBtn.setOnAction(this);
 
@@ -67,10 +62,11 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 
 	}
 
+	// create a new scene for the baccarat game play
 	public void showGameScene(ObjectOutputStream out) throws IOException {
 		System.out.println("showing game scene");
 		mainRoot = new VBox();
-		gameSceneController = new GameSceneController(mainRoot, socket, packet, out);
+		gameSceneController = new GameSceneController(mainRoot, socket, baccaratInfo, out);
 		primaryStage.setScene(new Scene(mainRoot,600,600));
 		primaryStage.show();
 
@@ -91,14 +87,17 @@ public class JavaFXTemplate extends Application implements EventHandler, Seriali
 		}
 	}
 
+	// get the login details from the client intro GUI and try to make connection with the server
 	public ObjectOutputStream connectToServer(int portNumber) throws IOException, ClassNotFoundException {
 
-		socket = new Socket(ipAddress.getText(), portNumber);
-		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
+		socket = new Socket(ipAddress.getText(), portNumber);   // create a socket with the server's IP address and port number
+		ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream()); // output stream created to write objects to buffer
 
-		packet = new model.Packet(socket.getLocalSocketAddress().toString(),portNumber, clientName.getText());
-		packet.actionRequest = Util.ACTION_REQUEST_CONNECT;
-		outStream.writeObject(packet);
+		// get the client's IP address and send it to the server via BaccaratInfo
+		baccaratInfo = new BaccaratInfo(socket.getLocalSocketAddress().toString(),portNumber, clientName.getText());
+
+		baccaratInfo.actionRequest = Util.ACTION_REQUEST_CONNECT;
+		outStream.writeObject(baccaratInfo);  // enclose all the info in a packet and send it to server
 		outStream.reset();
 		outStream.reset();
 		return outStream;

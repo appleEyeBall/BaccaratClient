@@ -3,9 +3,10 @@ package model;
 import java.io.Serializable;
 
 public class Card implements Serializable {
-    String suite;
-    int value;
+    private String suite;  // card suite
+    private int value;  // card value
 
+    // getters and setters for the private data members
     public String getSuite() {
         return suite;
     }
@@ -27,5 +28,4 @@ public class Card implements Serializable {
         this.value = value;
     }
 
-    // values for face cards: 1:ACE; 11: QUEEN; 12:KING; JACK:13
 }

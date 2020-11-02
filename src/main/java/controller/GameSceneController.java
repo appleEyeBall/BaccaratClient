@@ -14,13 +14,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Card;
 import model.CardVisual;
-import model.Packet;
+import model.BaccaratInfo;
 import util.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+
+//This class controls the Client game scene GUI and handles all the socket communication with the server whenever needed
 
 public class GameSceneController extends Thread implements EventHandler {
 
@@ -40,7 +42,7 @@ public class GameSceneController extends Thread implements EventHandler {
     Button tie;
     TextField dollars;
     Socket socket;
-    Packet packet;
+    BaccaratInfo baccaratInfo;
     ObjectOutputStream out;
     ObjectInputStream in;
     int countClicks;
@@ -49,22 +51,21 @@ public class GameSceneController extends Thread implements EventHandler {
     int bankerCard;
     Label playerCurrentScore;
     Label bankerCurrentScore;
-    ArrayList<Integer> playerScoreList;
-    ArrayList<Integer> bankerScoreList;
 
-    public GameSceneController(VBox gameScene, Socket socket, Packet packet, ObjectOutputStream out) throws IOException {
+
+    public GameSceneController(VBox gameScene, Socket socket, BaccaratInfo baccaratInfo, ObjectOutputStream out) throws IOException {
         this.socket = socket;
         this.gameScene = gameScene;
-        this.packet = packet;
+        this.baccaratInfo = baccaratInfo;
         this.out = out;
-//        in = new ObjectInputStream(this.socket.getInputStream());
+
         gameScene.setPadding(new Insets(10,10,10,10));
 
-        scoreRow =  new HBox();
+        scoreRow =  new HBox();  // this row displays the current scores for each player
         createScoreRow();
-        playArea = new HBox();
+        playArea = new HBox();  // this Hbox is the main play area where cards are presented
         createPlayArea();
-        bidRow = new HBox();
+        bidRow = new HBox();    // this HBox consists of the bidding information and selection made by the client
         bidRow.setSpacing(30);
         createControlsArea();
         initializeGame();
@@ -77,13 +78,14 @@ public class GameSceneController extends Thread implements EventHandler {
 
     public void createScoreRow(){
 
-        playerCurrentScore = new Label("0");
+        playerCurrentScore = new Label("0");    // display the player's current score
 
         playerCurrentScore.setAlignment(Pos.CENTER);
         Label playerLabel = new Label("PLAYER");
         Label baccarat = new Label("BACCARAT");
+        baccarat.setUnderline(true);
         Label bankerLabel = new Label("BANKER");
-        bankerCurrentScore = new Label("0");
+        bankerCurrentScore = new Label("0");    // display the banker's current score
 
         bankerCurrentScore.setAlignment(Pos.CENTER);
         bankerLabel.setAlignment(Pos.CENTER);
@@ -101,15 +103,12 @@ public class GameSceneController extends Thread implements EventHandler {
         bankerLabel.setPrefSize(140,50);
         baccarat.setPrefSize(120,50);
 
-        //update the current scores for both banker and player
-        //playerCurrentScore.setText(packet.getPlayerDetails().getHandTotal());
-
-        scoreRow.setSpacing(600/16);  // might make a UTIL.java later don't worry
-        scoreRow.getChildren().addAll(playerCurrentScore,playerLabel, baccarat,bankerLabel, bankerCurrentScore);
+        scoreRow.setSpacing(600/16);
+        scoreRow.getChildren().addAll(playerCurrentScore,playerLabel, baccarat,bankerLabel, bankerCurrentScore); // adding all the elements to the scoreRow
 
     }
     public void createPlayArea(){
-        playArea.setMinHeight(370);
+        playArea.setMinHeight(380);
         Card sampleCard = new Card("test", 0);
         CardVisual cardVisual = new CardVisual(sampleCard);
         cardVisual.getVisual().setVisible(false);
@@ -139,8 +138,6 @@ public class GameSceneController extends Thread implements EventHandler {
         drawArea.setAlignment(Pos.CENTER);
         drawArea.getChildren().add(makeDraw);
 
-
-
         // divide bankerArea into column into 2 rows
         bankerAreaFirst = new HBox();
         bankerAreaFirst.setAlignment(Pos.CENTER);
@@ -154,36 +151,41 @@ public class GameSceneController extends Thread implements EventHandler {
         playArea.setPadding(new Insets(10,10,0,0));
 
     }
+
     public void createControlsArea(){
+        // create a VBox that sores the bid amount input taken from client
         VBox bidAmount = new VBox();
         Label bidLabel = new Label();
         bidLabel.setText("Enter Your Bid Amount");
         bidLabel.setAlignment(Pos.CENTER);
         bidLabel.setPrefSize(180,50);
-        dollars = new TextField();
+
+        dollars = new TextField();  // contains the amount
         dollars.setPromptText("$");
         dollars.setPrefSize(180,30);
         dollars.setAlignment(Pos.CENTER);
+        dollars.setOnKeyReleased(this);
         bidAmount.getChildren().addAll(bidLabel,dollars);
 
+        // create a VBox that shows the client's bet for the game
         VBox betChoices = new VBox();
         Label betsLabel = new Label();
         betsLabel.setText("What will you bet on?");
         betsLabel.setPrefSize(180,50);
 
-        playerWins = new Button();
+        playerWins = new Button();   // bet for player
         playerWins.setText("Player");
         playerWins.setAlignment(Pos.CENTER);
         playerWins.setPrefSize(180,30);
         playerWins.setOnAction(this);
 
-        bankerWins = new Button();
+        bankerWins = new Button();   // bet for banker
         bankerWins.setText("Banker");
         bankerWins.setAlignment(Pos.CENTER);
         bankerWins.setPrefSize(180,30);
         bankerWins.setOnAction(this);
 
-        tie = new Button();
+        tie = new Button();  // bet for a Tie in the game
         tie.setText("Tie");
         tie.setAlignment(Pos.CENTER);
         tie.setPrefSize(180,30);
@@ -192,14 +194,15 @@ public class GameSceneController extends Thread implements EventHandler {
 
         betChoices.getChildren().addAll(betsLabel,playerWins,bankerWins,tie);
 
+        // create a play button to start the game
         VBox controls = new VBox();
         playBtn = new Button();
         playBtn.setText("Play");
         playBtn.setAlignment(Pos.CENTER);
         playBtn.setPrefSize(80,50);
-
         playBtn.setOnAction(this);
 
+        //create a quit button to end the game and ends the server connection
         quitBtn = new Button();
         quitBtn.setText("Quit");
         quitBtn.setAlignment(Pos.CENTER);
@@ -215,85 +218,102 @@ public class GameSceneController extends Thread implements EventHandler {
 
     }
 
+    // display the results of the game after its over in an alert window
     public void displayResults(){
         String result;
-        if(packet.getPlayerDetails().getBetChoice().equals(packet.getWinnerMsg())){
+        if(baccaratInfo.getPlayerDetails().getBetChoice().equals(baccaratInfo.getWinnerMsg())){
             result = "won";
         }
         else{
             result = "lose";
         }
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeight(300);
+        alert.setWidth(300);
+        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
         alert.setTitle("Game Over");
         alert.setHeaderText("--Game Results--");
-        ArrayList<Card> playerHand = packet.getPlayerDetails().getPlayerHand();
-        ArrayList<Card> bankerHand = packet.getPlayerDetails().getBankerHand();
-        alert.setContentText("Player's hand Total : " + packet.getPlayerDetails().getHandTotal(playerHand));
-        alert.setContentText("Banker's hand Total : " + packet.getPlayerDetails().getHandTotal(bankerHand));
 
-        if(packet.getWinnerMsg().equals("Tie")){
-            alert.setContentText("It's a Tie !");
+        //get the player and banker hands after game finishes from the BaccaratInfo
+        ArrayList<Card> playerHand = baccaratInfo.getPlayerDetails().getPlayerHand();
+        ArrayList<Card> bankerHand = baccaratInfo.getPlayerDetails().getBankerHand();
+
+        // print the content for the result
+        if(baccaratInfo.getWinnerMsg().equals("Tie")){
+            alert.setContentText("Player's hand Total : " + baccaratInfo.getPlayerDetails().getHandTotal(playerHand)+"\n"+
+           "Banker's hand Total : " + baccaratInfo.getPlayerDetails().getHandTotal(bankerHand)+ "\n"+
+            "It's a Tie ! "+ "You bet on " + baccaratInfo.getPlayerDetails().getBetChoice() + ", you " + result);
         }
         else {
-            alert.setContentText(packet.getWinnerMsg() + "wins !");
+            alert.setContentText("Player's hand Total : " + baccaratInfo.getPlayerDetails().getHandTotal(playerHand)+"\n"+
+            "Banker's hand Total : " + baccaratInfo.getPlayerDetails().getHandTotal(bankerHand)+ "\n"+
+             baccaratInfo.getWinnerMsg() + " wins !"+ "You bet on " + baccaratInfo.getPlayerDetails().getBetChoice() + ", you " + result);
         }
-        alert.setContentText("You bet on " + packet.getPlayerDetails().getBetChoice() + ", you " + result);
-
         alert.showAndWait();
     }
+
+
     @Override
     public void handle(Event event) {
-        if (event.getSource() == makeDraw && packet.getPlayerDetails().getPlayerHand()==null) {     // send demo packet to server
-            try {
 
-                packet.actionRequest = Util.ACTION_REQUEST_DRAW;
-                out.reset();            // reset the ObjectOutputStream
-                out.writeObject(packet);
-                System.out.println("sent packet to server");
-//                drawBtnClicks++;
-//
-//                if(drawBtnClicks % 2 == 0){
-//                    playerCard++;
-//                    updateCurrentScores(packet.getPlayerDetails().getPlayerHand(),playerCurrentScore,playerCard);
-//                    //playerScoreList(playerCard);
-//
-//                }
-//                else{
-//                    bankerCard++;
-//                    updateCurrentScores(packet.getPlayerDetails().getBankerHand(),bankerCurrentScore,bankerCard);
-//                }
-
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        // event handling for bid amount textfield
+        if(event.getSource() == dollars){
+            System.out.println("enter dollars");
+            baccaratInfo.getPlayerDetails().setBidAmount(Integer.valueOf(dollars.getText()));  // set the amount in the BaccaratInfo
+            activateButtons();  // activate the play game buttons
         }
-        else{       // we don't wanna resend packet to server
-            updateWithCards(packet);
+
+        // event handling for the draw button that reads BaccaratInfo sent from the server and displays the cards
+        if (event.getSource() == makeDraw) {     // send demo packet to server
+            if (baccaratInfo.getPlayerDetails().getPlayerHand()==null){
+                try {
+
+                    baccaratInfo.actionRequest = Util.ACTION_REQUEST_DRAW;
+                    out.reset();            // reset the ObjectOutputStream
+                    out.writeObject(baccaratInfo);
+                    System.out.println("sent packet to server");
+
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else { // update the current scores for each player
+                updateWithCards(baccaratInfo);
+                drawBtnClicks++;
+                if(drawBtnClicks % 2 != 0){
+                    updateCurrentScores(baccaratInfo.getPlayerDetails().getPlayerHand(),playerCurrentScore,playerCard);
+                    playerCard++;
+                }
+                else{
+                    updateCurrentScores(baccaratInfo.getPlayerDetails().getBankerHand(),bankerCurrentScore,bankerCard);
+                    bankerCard++;
+
+                }
+            }
+
         }
 
         if(event.getSource() == playBtn){
             // get all game info and send to server
-            restart();
-            packet.getPlayerDetails().setBidAmount(Integer.valueOf(dollars.getText()));
-            packet.actionRequest = Util.ACTION_REQUEST_PLAY;
+            activateButtons();
+            baccaratInfo.actionRequest = Util.ACTION_REQUEST_PLAY;
             try {
                 out.reset();
-                out.writeObject(packet);
+                out.writeObject(baccaratInfo);   // send the BaccratInfo to server that contains Bidding details from the client side
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
 
         }
 
         if (event.getSource() == quitBtn) {
             try {
                 // notify the server of our intention to quit game
-                packet.setClientPlaying(-1);
-                packet.actionRequest = Util.ACTION_REQUEST_QUIT;
+                baccaratInfo.setClientPlaying(-1);
+                baccaratInfo.actionRequest = Util.ACTION_REQUEST_QUIT;
                 out.reset();
-                out.writeObject(packet);
+                out.writeObject(baccaratInfo);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -306,13 +326,16 @@ public class GameSceneController extends Thread implements EventHandler {
                 bankerWins.setDisable(true);
                 tie.setDisable(true);
                 playerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
-                packet.getPlayerDetails().setBetChoice(playerWins.getText());
+                baccaratInfo.getPlayerDetails().setBetChoice(playerWins.getText());  // set bet choice to player
+               activateButtons();
+
             }
             else{
                  bankerWins.setDisable(false);
                  tie.setDisable(false);
                  playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
             }
+
 
         }
         if(event.getSource() == bankerWins){
@@ -321,7 +344,8 @@ public class GameSceneController extends Thread implements EventHandler {
                 playerWins.setDisable(true);
                 tie.setDisable(true);
                 bankerWins.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
-                packet.getPlayerDetails().setBetChoice(bankerWins.getText());
+                baccaratInfo.getPlayerDetails().setBetChoice(bankerWins.getText());
+                activateButtons();
            }
            else{
                playerWins.setDisable(false);
@@ -335,7 +359,8 @@ public class GameSceneController extends Thread implements EventHandler {
                 bankerWins.setDisable(true);
                 playerWins.setDisable(true);
                 tie.setBackground(new Background(new BackgroundFill(Color.INDIANRED, null, null)));
-                packet.getPlayerDetails().setBetChoice(tie.getText());
+                baccaratInfo.getPlayerDetails().setBetChoice(tie.getText());
+                activateButtons();
             }
             else{
                 playerWins.setDisable(false);
@@ -347,26 +372,21 @@ public class GameSceneController extends Thread implements EventHandler {
 
     }
 
-    public void restart(){
-     
-        // TODO: Do other restart things here but leave winnings in packet untouched
-    }
-
-
     @Override
     public void run() {
         try {
-            in = new ObjectInputStream(this.socket.getInputStream());
+            in = new ObjectInputStream(this.socket.getInputStream());  // create input stream for the socket
+
             while (true){
                 System.out.println("Waiting on response from server...");
-                Packet packetFromServer = (Packet) in.readObject();
+                BaccaratInfo baccaratInfoFromServer = (BaccaratInfo) in.readObject();
 
                 // if packet does not belong to this client, ignore it
-                if (!packetFromServer.getIpAddress().toString().equals(socket.getLocalSocketAddress().toString())){
+                if (!baccaratInfoFromServer.getIpAddress().toString().equals(socket.getLocalSocketAddress().toString())){
                     System.out.println("Not my packet. ignoring...");
                     continue;
                 }
-                else if (packetFromServer.actionRequest.equals(Util.ACTION_REQUEST_QUIT)){
+                else if (baccaratInfoFromServer.actionRequest.equals(Util.ACTION_REQUEST_QUIT)){
                     // server has told us we can quit
                     System.out.println("IT is my packet, quitting");
                     // assign packet to what we get from server
@@ -379,8 +399,19 @@ public class GameSceneController extends Thread implements EventHandler {
                 }
                 else{
                     System.out.println("IT is my packet, updating...");
-                    packet = packetFromServer;
-                    updateWithCards(packet);
+                    baccaratInfo = baccaratInfoFromServer;
+                    updateWithCards(baccaratInfo);
+
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            drawBtnClicks++;
+                            System.out.println("Should update scores...");
+                            updateCurrentScores(baccaratInfo.getPlayerDetails().getPlayerHand(),playerCurrentScore,playerCard);
+                            playerCard++;
+
+                        }
+                    });
                 }
 
             }
@@ -389,47 +420,81 @@ public class GameSceneController extends Thread implements EventHandler {
         }
     }
 
+    //update cuurent scores for a given hand
     public void updateCurrentScores(ArrayList<Card> hand, Label scoreLbl,int index){
         ArrayList<Card> tempHand = new ArrayList<>();
-        tempHand = hand;
         ArrayList<Integer> currScore = new ArrayList<>();
-        currScore.add(0);
 
-        for(Card card: tempHand){
+        for(Card card: hand){
             tempHand.add(card);
-            currScore.add(packet.getPlayerDetails().getHandTotal(tempHand));
+            currScore.add(baccaratInfo.getPlayerDetails().getHandTotal(tempHand));  // store the scores at each stage in the list
+        }
+        System.out.println("score: " + currScore.get(0));
+        if(index >= hand.size()){
+            return;
         }
         scoreLbl.setText(String.valueOf(currScore.get(index)));
     }
 
+    // initialize the entire game scene when the game starts or restarts
     public void initializeGame(){
 
-       playBtn.setDisable(true);
+        // disable the buttons
+        playBtn.setDisable(true);
         makeDraw.setDisable(true);
+        playerWins.setDisable(false);
+        bankerWins.setDisable(false);
+        tie.setDisable(false);
         countClicks = 0;
         drawBtnClicks = 0;
         playerCard = 0;
         bankerCard = 0;
-         playerAreaFirst.getChildren().clear();
+        // reset the Baccarat Info members  before starting a new game
+        playerAreaFirst.getChildren().clear();
         playerAreaSecond.getChildren().clear();
         bankerAreaFirst.getChildren().clear();
         bankerAreaSecond.getChildren().clear();
+        baccaratInfo.getPlayerDetails().setBankerHand(null);
+        baccaratInfo.getPlayerDetails().setPlayerHand(null);
+        baccaratInfo.getPlayerDetails().setBidAmount(0);
+        playerCurrentScore.setText("0");
+        bankerCurrentScore.setText("0");
+        playerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+        bankerWins.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+        tie.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY, null, null)));
+        baccaratInfo.getPlayerDetails().setBetChoice(null);
+
 
     }
 
-    public void updateWithCards(Packet packet){
+    // activate the play and draw buttons when needed
+     public void activateButtons(){
+
+         if(!playBtn.isDisable()){
+             makeDraw.setDisable(false);
+             playBtn.setDisable(true);
+         }
+         if(baccaratInfo.getPlayerDetails().getBetChoice() != null && baccaratInfo.getPlayerDetails().getBidAmount() != 0){
+             System.out.println("activated");
+             playBtn.setDisable(false);
+         }
+
+     }
+     // extract one card from the player and banker hands one at a time and display them on the screen
+    public void updateWithCards(BaccaratInfo baccaratInfo){
        Platform.runLater(new Runnable() {
            @Override
            public void run() {
                System.out.println("Started run later");
-               ArrayList<Card> playerHand = packet.getPlayerDetails().getPlayerHand();
-               ArrayList<Card> bankerHand = packet.getPlayerDetails().getBankerHand();
+               ArrayList<Card> playerHand = baccaratInfo.getPlayerDetails().getPlayerHand();
+               ArrayList<Card> bankerHand = baccaratInfo.getPlayerDetails().getBankerHand();
+
                if (playerHand == null || bankerHand == null){
                    return;
                }
                else if (playerAreaFirst.getChildren().size() == 0){
                    CardVisual cardVisual = new CardVisual(playerHand.get(0));
-                   playerAreaFirst.getChildren().add(cardVisual.getVisual());
+                   playerAreaFirst.getChildren().add(cardVisual.getVisual());  // create the visuals for the card in a new class
                }
                else if (bankerAreaFirst.getChildren().size() == 0){
                    CardVisual cardVisual = new CardVisual(bankerHand.get(0));
@@ -451,15 +516,17 @@ public class GameSceneController extends Thread implements EventHandler {
                    CardVisual cardVisual = new CardVisual(bankerHand.get(2));
                    bankerAreaSecond.getChildren().add(cardVisual.getVisual());
                }
+               // game ends - reset the hands to null
                else{
                    System.out.println("gonna send a game-over request");
-                   packet.getPlayerDetails().setPlayerHand(null);
-                   packet.getPlayerDetails().setBankerHand(null);
+                   displayResults();
+                   baccaratInfo.getPlayerDetails().setPlayerHand(null);
+                   baccaratInfo.getPlayerDetails().setBankerHand(null);
                    try {
-                       packet.actionRequest = Util.ACTION_REQUEST_GAME_OVER;
+                       baccaratInfo.actionRequest = Util.ACTION_REQUEST_GAME_OVER;
                        out.reset();
-                       out.writeObject(packet);
-                       // TODO: deactivate buttons appropriately. (should be a function)
+                       out.writeObject(baccaratInfo);
+                       initializeGame();
                    } catch (IOException e) {
                        e.printStackTrace();
                    }
